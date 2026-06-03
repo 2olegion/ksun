@@ -95,46 +95,6 @@ jobs:
           echo "KernelSU-Next version:"
           grep "^KERNELSU_VERSION" KernelSU/kernel/Makefile || true
 
-      # ─── SUSFS ────────────────────────────────────────────────────────────────
-      - name: Apply SUSFS patches
-        if: env.SUSFS_ENABLED == 'true'
-        working-directory: kernel_src
-        run: |
-          # Kernel-Version aus Branch ableiten (android15-6.6 → 6.6)
-          KV=$(echo "${{ env.KERNEL_BRANCH }}" | grep -oP '\d+\.\d+$')
-          # Android-Version ableiten (android15-6.6 → android15)
-          AV=$(echo "${{ env.KERNEL_BRANCH }}" | grep -oP '^android\d+')
-          echo "KV=$KV AV=$AV"
-
-          git clone --depth=1 https://github.com/simonpunk/susfs4ksu susfs_src
-
-          PDIR="susfs_src/kernel_patches"
-
-          # Kernel patch — versuche versionsspezifisch, dann generisch
-          for P in \
-            "$PDIR/${AV}_${KV}/add_susfs_in_kernel.patch" \
-            "$PDIR/${AV}/add_susfs_in_kernel.patch" \
-            "$PDIR/add_susfs_in_kernel.patch"
-          do
-            if [ -f "$P" ]; then
-              echo "Applying kernel patch: $P"
-              patch -p1 < "$P" && break || echo "Patch failed, trying next..."
-            fi
-          done
-
-          # KernelSU-Next patch
-          for P in \
-            "$PDIR/KernelSU/next/add_susfs_in_ksu.patch" \
-            "$PDIR/KernelSU/add_susfs_in_ksu.patch"
-          do
-            if [ -f "$P" ]; then
-              echo "Applying KSU patch: $P"
-              cd KernelSU && patch -p1 < "../$P" && cd .. && break || cd .. && echo "Patch failed, trying next..."
-            fi
-          done
-
-          echo "SUSFS patching done."
-
       # ─── Build ────────────────────────────────────────────────────────────────
       - name: Build kernel
         working-directory: kernel_src
