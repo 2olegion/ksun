@@ -89,20 +89,18 @@ jobs:
           echo "Dependencies installed."
 
       # ─── Toolchain ────────────────────────────────────────────────────────────
-      - name: Download AOSP Clang ${{ env.CLANG_VERSION }}
-        run: |
-          mkdir -p $HOME/toolchain/clang
-          wget -q --show-progress \
-            "https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/master/clang-${{ env.CLANG_VERSION }}.tar.gz" \
-            -O clang.tar.gz || \
-          wget -q --show-progress \
-            "https://github.com/llvm/llvm-project/releases/latest/download/clang+llvm-17.0.6-x86_64-linux-gnu-ubuntu-22.04.tar.xz" \
-            -O clang.tar.gz
-          tar -xf clang.tar.gz -C $HOME/toolchain/clang --strip-components=1 2>/dev/null || \
-          tar -xJf clang.tar.gz -C $HOME/toolchain/clang --strip-components=1
-          echo "$HOME/toolchain/clang/bin" >> $GITHUB_PATH
-          echo "Clang version:"
-          $HOME/toolchain/clang/bin/clang --version || true
+      - name: Download Clang (ZyCromerZ)
+  run: |
+    mkdir -p $HOME/toolchain/clang
+    # Latest release tag via GitHub API
+    TAG=$(curl -s https://api.github.com/repos/ZyCromerZ/Clang/releases/latest \
+          | grep '"tag_name"' | cut -d'"' -f4)
+    URL="https://github.com/ZyCromerZ/Clang/releases/download/${TAG}/Clang-${TAG%-release}.tar.gz"
+    echo "Downloading Clang $TAG from $URL"
+    wget -q --show-progress "$URL" -O clang.tar.gz
+    tar -xf clang.tar.gz -C $HOME/toolchain/clang
+    echo "$HOME/toolchain/clang/bin" >> $GITHUB_PATH
+    $HOME/toolchain/clang/bin/clang --version
 
       # ─── Kernel source ────────────────────────────────────────────────────────
       - name: Clone kernel source
